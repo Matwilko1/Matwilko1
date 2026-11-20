@@ -1,0 +1,43 @@
+configuration:
+  sms_provider:
+    name: SMS provider
+    description: "modem = USB modem with a SIM card plugged into this machine; twilio = send with your Twilio account; homeassistant = use a notify service you already have in Home Assistant (e.g. a GSM modem or the Twilio SMS integration)."
+  twilio_account_sid:
+    name: Twilio account SID
+  twilio_auth_token:
+    name: Twilio auth token
+  twilio_from:
+    name: Twilio sender
+    description: Your Twilio phone number (+1555...) or Messaging Service SID (MG...).
+  notify_service:
+    name: Home Assistant notify service
+    description: "Used when provider is homeassistant, e.g. notify.sms. It is called with the coworker's phone number as target."
+  modem_device:
+    name: Modem serial port
+    description: "The modem's AT-command port. Prefer a /dev/serial/by-id/... path; SIM7600 modems usually use the one ending in if02 (ttyUSB2)."
+  modem_pin:
+    name: SIM PIN
+    description: Leave empty if the SIM has no PIN.
+  modem_baud:
+    name: Modem baud rate
+    description: 115200 works for almost all USB modems.
+  payee:
+    name: Pay to
+  payment_details:
+    name: Payment details
+    description: How to pay, e.g. a bank account or phone number for transfers.
+  currency:
+    name: Currency
+  message_template:
+    name: Message
+    description: "Placeholders: {name}, {amount}, {payee}, {payment_details}. Under 160 characters without emoji fits in one SMS."
+  min_amount:
+    name: Minimum amount
+    description: People who owe less than this are not texted.
+  schedule_enabled:
+    name: Automatic reminders
+  reminder_days:
+    name: Reminder days
+  reminder_time:
+    name: Reminder time
+    description: 24-hour HH:MM in Home Assistant's time zone.
