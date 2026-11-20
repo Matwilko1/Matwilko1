@@ -7,7 +7,7 @@ It uses only the Python standard library (3.11+) and sends SMS through [Twilio](
 
 1. **Home Assistant add-on (recommended)** - a sidebar page for tracking balances
    and a built-in schedule. See [Install on Home Assistant](#install-on-home-assistant).
-2. **Command line / GitHub Actions** - described below. Run commands from the
+2. **Command line** - described below. Run commands from the
    `coffee-reminders/` folder.
 
 ## Install on Home Assistant
@@ -35,7 +35,7 @@ Full details: [coffee-reminders/DOCS.md](coffee-reminders/DOCS.md).
 
 - `config.json` is the ledger: who your coworkers are, their phone numbers, and how much each one owes.
 - `remind` sends an SMS to every **active** coworker who owes at least `min_amount`. People who owe nothing get no message.
-- A GitHub Actions workflow runs `remind` on a schedule (every Monday at 08:00 UTC by default).
+- Run `remind` on a schedule with cron (see below).
 
 ## Setup
 
@@ -81,25 +81,11 @@ Edit `message_template` in `config.json`. Available placeholders:
 `{name}`, `{amount}`, `{payee}`, `{payment_details}`.
 Keep it under 160 characters (no emoji) to fit in a single SMS segment.
 
-## Automatic reminders with GitHub Actions
+## Automatic reminders without Home Assistant
 
-`.github/workflows/coffee-reminders.yml` runs the tests and then sends reminders every Monday.
-Add these repository secrets (Settings → Secrets and variables → Actions):
-
-| Secret | Value |
-| --- | --- |
-| `COFFEE_CONFIG_JSON` | the full contents of your `config.json` |
-| `TWILIO_ACCOUNT_SID` | your Twilio account SID |
-| `TWILIO_AUTH_TOKEN` | your Twilio auth token |
-| `TWILIO_FROM` | your Twilio number or Messaging Service SID |
-
-After recording payments locally, paste the updated `config.json` into the
-`COFFEE_CONFIG_JSON` secret so the next scheduled run uses current balances.
-Use **Run workflow** (dry run is on by default) to preview the messages.
-
-Prefer running it on your own machine? Use cron instead:
+Use cron on any always-on Linux machine:
 ```cron
-0 9 * * 1  cd /path/to/repo && . ./.env && python3 -m coffee_reminders remind
+0 9 * * 1  cd /path/to/repo/coffee-reminders && . ./.env && python3 -m coffee_reminders remind
 ```
 
 ## Be nice
