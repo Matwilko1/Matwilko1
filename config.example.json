@@ -1,0 +1,11 @@
+{
+  "payee": "Coffee Fund",
+  "payment_details": "bank transfer to PL00 0000 0000 0000 0000 0000 0000",
+  "currency": "PLN",
+  "message_template": "Hi {name}! Friendly coffee reminder: you owe {amount}. Please pay {payee} ({payment_details}). Thanks!",
+  "min_amount": 0.01,
+  "coworkers": [
+    {"name": "Anna", "phone": "+48500000001", "owes": 25.0, "active": true},
+    {"name": "Piotr", "phone": "+48500000002", "owes": 0.0, "active": true}
+  ]
+}

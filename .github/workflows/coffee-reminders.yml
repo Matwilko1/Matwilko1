@@ -1,0 +1,51 @@
+name: Coffee payment reminders
+
+on:
+  schedule:
+    # Every Monday at 08:00 UTC. Edit to taste (cron is in UTC).
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only print the messages, don't send SMS"
+        type: boolean
+        default: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pytest && python -m pytest -q
+
+  remind:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Write config from secret
+        env:
+          COFFEE_CONFIG_JSON: ${{ secrets.COFFEE_CONFIG_JSON }}
+        run: |
+          if [ -z "$COFFEE_CONFIG_JSON" ]; then
+            echo "::error::Add the COFFEE_CONFIG_JSON repository secret (contents of your config.json)"
+            exit 1
+          fi
+          printf '%s' "$COFFEE_CONFIG_JSON" > config.json
+      - name: Send reminders
+        env:
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_FROM: ${{ secrets.TWILIO_FROM }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.dry_run }}" = "true" ]; then
+            python -m coffee_reminders remind --dry-run
+          else
+            python -m coffee_reminders remind
+          fi
