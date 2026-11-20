@@ -8,7 +8,7 @@ from coffee_reminders import config as cfgmod
 from coffee_reminders.cli import main, send_reminders
 from coffee_reminders.sms import ConsoleSender, SmsError, TwilioSender
 
-EXAMPLE = Path(__file__).parent.parent / "config.example.json"
+EXAMPLE = Path(__file__).parent.parent / "coffee-reminders" / "config.example.json"
 
 
 @pytest.fixture

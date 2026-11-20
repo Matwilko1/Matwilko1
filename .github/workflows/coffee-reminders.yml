@@ -30,6 +30,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Write config from secret
+        working-directory: coffee-reminders
         env:
           COFFEE_CONFIG_JSON: ${{ secrets.COFFEE_CONFIG_JSON }}
         run: |
@@ -39,6 +40,7 @@ jobs:
           fi
           printf '%s' "$COFFEE_CONFIG_JSON" > config.json
       - name: Send reminders
+        working-directory: coffee-reminders
         env:
           TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}

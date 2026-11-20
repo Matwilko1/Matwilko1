@@ -3,7 +3,35 @@
 A small tool that texts coworkers who owe money to the coffee fund.
 It uses only the Python standard library (3.11+) and sends SMS through [Twilio](https://www.twilio.com/).
 
-## How it works
+## Two ways to run it
+
+1. **Home Assistant add-on (recommended)** - a sidebar page for tracking balances
+   and a built-in schedule. See [Install on Home Assistant](#install-on-home-assistant).
+2. **Command line / GitHub Actions** - described below. Run commands from the
+   `coffee-reminders/` folder.
+
+## Install on Home Assistant
+
+Needs Home Assistant OS or Supervised (the editions that support add-ons).
+
+**Option A - add this repository (needs the repo to be public on GitHub):**
+Settings → Add-ons → Add-on Store → ⋮ → Repositories → add
+`https://github.com/Matwilko1/Matwilko1`, then install **Coffee Reminders**.
+
+**Option B - local add-on (works with a private repo):**
+1. Install the *Samba share* or *Advanced SSH & Web Terminal* add-on.
+2. Copy the `coffee-reminders` folder into the `addons` share, so you have
+   `/addons/coffee-reminders/config.yaml`.
+3. Settings → Add-ons → Add-on Store → ⋮ → **Check for updates**. It appears
+   under *Local add-ons*. Install it. Home Assistant builds it on your machine,
+   which can take a few minutes.
+
+Then on the add-on's **Configuration** tab choose how to send SMS
+(Twilio, or an SMS notify service you already have in Home Assistant), your payment
+details and the reminder days/time. Start it and open **Coffee** in the sidebar.
+Full details: [coffee-reminders/DOCS.md](coffee-reminders/DOCS.md).
+
+## How it works (command line)
 
 - `config.json` is the ledger: who your coworkers are, their phone numbers, and how much each one owes.
 - `remind` sends an SMS to every **active** coworker who owes at least `min_amount`. People who owe nothing get no message.
@@ -11,7 +39,7 @@ It uses only the Python standard library (3.11+) and sends SMS through [Twilio](
 
 ## Setup
 
-1. Copy the example config and edit it:
+1. In the `coffee-reminders/` folder, copy the example config and edit it:
    ```bash
    cp config.example.json config.json
    ```

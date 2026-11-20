@@ -7,27 +7,21 @@ import sys
 from pathlib import Path
 
 from . import config as cfgmod
+from .reminders import send_reminders as _send
 from .sms import ConsoleSender, Sender, SmsError, TwilioSender
 
 
 def send_reminders(cfg: cfgmod.Config, sender: Sender, only: list[str] | None = None) -> int:
     """Text everyone who owes money. Returns the number of failures."""
-    targets = cfg.debtors()
-    if only:
-        wanted = {n.lower() for n in only}
-        targets = [c for c in targets if c.name.lower() in wanted]
-    if not targets:
+    results = _send(cfg, sender, only)
+    if not results:
         print("Nobody owes anything - no reminders sent.")
-        return 0
-    failures = 0
-    for c in targets:
-        try:
-            ref = sender.send(c.phone, cfg.render(c))
-            print(f"Reminded {c.name} ({cfg.format_amount(c.owes)}) {ref}")
-        except SmsError as exc:
-            failures += 1
-            print(f"FAILED to remind {c.name}: {exc}", file=sys.stderr)
-    return failures
+    for name, ok, detail in results:
+        if ok:
+            print(f"Reminded {name} ({detail})")
+        else:
+            print(f"FAILED to remind {name}: {detail}", file=sys.stderr)
+    return sum(1 for _, ok, _ in results if not ok)
 
 
 def cmd_list(cfg, args):
@@ -108,11 +102,25 @@ def build_parser() -> argparse.ArgumentParser:
     rm = sub.add_parser("remove", help="remove a coworker")
     rm.add_argument("name")
     rm.set_defaults(func=cmd_remove)
+    sub.add_parser("serve", help="run the Home Assistant add-on (web UI + scheduler)")
     return p
+
+
+def serve() -> int:
+    from . import scheduler, web
+    from .addon import Store
+
+    store = Store()
+    store.log("Add-on started")
+    scheduler.start(store)
+    web.serve(store)
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.command == "serve":
+        return serve()
     try:
         cfg = cfgmod.load(args.config)
         return args.func(cfg, args) or 0

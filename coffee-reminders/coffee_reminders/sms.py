@@ -79,3 +79,38 @@ class TwilioSender:
             raise SmsError(f"Twilio HTTP {exc.code}: {detail}") from exc
         except urllib.error.URLError as exc:
             raise SmsError(f"could not reach Twilio: {exc.reason}") from exc
+
+
+class HomeAssistantNotifySender:
+    """Sends through a Home Assistant notify service (e.g. a GSM modem or Twilio SMS
+    integration) using the Supervisor API, available inside an add-on."""
+
+    def __init__(self, service: str, token: str | None = None,
+                 base_url: str = "http://supervisor/core/api", timeout: float = 30):
+        service = service.strip()
+        if service.startswith("notify."):
+            service = service[len("notify."):]
+        if not service:
+            raise SmsError("notify_service is not set in the add-on configuration")
+        self.service = service
+        self.token = token or os.environ.get("SUPERVISOR_TOKEN", "")
+        if not self.token:
+            raise SmsError("SUPERVISOR_TOKEN missing - is this running as an add-on?")
+        self.base_url = base_url
+        self.timeout = timeout
+
+    def send(self, to: str, body: str) -> str:
+        req = urllib.request.Request(
+            f"{self.base_url}/services/notify/{self.service}",
+            data=json.dumps({"message": body, "target": [to]}).encode(),
+            headers={"Authorization": f"Bearer {self.token}",
+                     "Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout):
+                return f"via notify.{self.service}"
+        except urllib.error.HTTPError as exc:
+            raise SmsError(f"Home Assistant HTTP {exc.code}: {exc.read()[:200]!r}") from exc
+        except urllib.error.URLError as exc:
+            raise SmsError(f"could not reach Home Assistant: {exc.reason}") from exc
