@@ -97,7 +97,12 @@ class Store:
 
     def sender(self) -> Sender:
         opts = self.options()
-        if opts.get("sms_provider", "twilio") == "homeassistant":
+        provider = opts.get("sms_provider", "twilio")
+        if provider == "modem":
+            from .modem import ModemSender
+            return ModemSender(opts.get("modem_device", ""), str(opts.get("modem_pin") or ""),
+                               int(opts.get("modem_baud") or 115200))
+        if provider == "homeassistant":
             return HomeAssistantNotifySender(opts.get("notify_service", ""))
         sid, token, frm = (opts.get("twilio_account_sid"), opts.get("twilio_auth_token"),
                            opts.get("twilio_from"))

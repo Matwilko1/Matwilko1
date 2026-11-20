@@ -1,7 +1,7 @@
 configuration:
   sms_provider:
     name: SMS provider
-    description: "twilio = send with your Twilio account; homeassistant = use a notify service you already have in Home Assistant (e.g. a GSM modem or the Twilio SMS integration)."
+    description: "modem = USB modem with a SIM card plugged into this machine; twilio = send with your Twilio account; homeassistant = use a notify service you already have in Home Assistant (e.g. a GSM modem or the Twilio SMS integration)."
   twilio_account_sid:
     name: Twilio account SID
   twilio_auth_token:
@@ -12,6 +12,15 @@ configuration:
   notify_service:
     name: Home Assistant notify service
     description: "Used when provider is homeassistant, e.g. notify.sms. It is called with the coworker's phone number as target."
+  modem_device:
+    name: Modem serial port
+    description: "The modem's AT-command port. Prefer a /dev/serial/by-id/... path; SIM7600 modems usually use the one ending in if02 (ttyUSB2)."
+  modem_pin:
+    name: SIM PIN
+    description: Leave empty if the SIM has no PIN.
+  modem_baud:
+    name: Modem baud rate
+    description: 115200 works for almost all USB modems.
   payee:
     name: Pay to
   payment_details:

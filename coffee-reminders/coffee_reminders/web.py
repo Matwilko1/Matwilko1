@@ -10,6 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from . import config as cfgmod
 from .addon import Store
 from .reminders import remind_and_log
+from .sms import SmsError
 
 # Only Home Assistant's ingress proxy (and localhost for testing) may talk to us;
 # Home Assistant itself handles login.
@@ -54,8 +55,13 @@ def hidden(name, value):
     return f'<input type="hidden" name="{name}" value="{html.escape(str(value))}">'
 
 
-def render_page(store: Store, msg: str = "", preview: list[tuple[str, str]] | None = None) -> str:
+def render_page(store: Store, msg: str = "", preview: list[tuple[str, str]] | None = None,
+                modem_status: dict[str, str] | None = None) -> str:
     e = html.escape
+    status_html = ""
+    if modem_status:
+        status_html = "<ul>" + "".join(f"<li><b>{e(k)}</b>: {e(v)}</li>"
+                                       for k, v in modem_status.items()) + "</ul>"
     try:
         cfg = store.config()
         error = ""
@@ -93,8 +99,10 @@ def render_page(store: Store, msg: str = "", preview: list[tuple[str, str]] | No
     schedule = (f"Automatic reminders: <b>{e(days)}</b> at <b>{e(opts.get('reminder_time', '09:00'))}</b>"
                 if opts.get("schedule_enabled", True) else "Automatic reminders are <b>off</b>")
     provider = opts.get("sms_provider", "twilio")
-    provider_txt = (f"notify.{opts.get('notify_service', '').removeprefix('notify.')}"
-                    if provider == "homeassistant" else "Twilio")
+    provider_txt = {
+        "homeassistant": f"notify.{opts.get('notify_service', '').removeprefix('notify.')}",
+        "modem": f"USB modem {opts.get('modem_device', '')}",
+    }.get(provider, "Twilio")
 
     parts.append(f'''
 <div class="card"><h2>Who owes what</h2><div class="table-wrap"><table>
@@ -111,6 +119,11 @@ def render_page(store: Store, msg: str = "", preview: list[tuple[str, str]] | No
     parts.append("</div>")
 
     parts.append(f'''
+<div class="card"><h2>Test SMS sending</h2><div class="row">
+{form("test", '<input name="phone" placeholder="your number +48..." required>', "Send test SMS")}
+{form("modem_status", "", "Check modem") if provider == "modem" else ""}
+</div>{status_html}</div>
+
 <div class="card"><h2>Charge everyone</h2>
 {form("charge", '<input type="number" step="0.01" name="amount" placeholder="amount" required>', "Add to all active")}
 <p class="muted">E.g. the monthly coffee fee. Paused people are skipped.</p></div>
@@ -135,6 +148,23 @@ def page(body: str) -> str:
 
 def handle_action(store: Store, action: str, form_data: dict[str, str]):
     """Apply a form action. Returns (message, preview_or_None)."""
+    if action == "test":
+        phone = cfgmod.Coworker("test", form_data.get("phone", "")).phone
+        try:
+            ref = store.sender().send(phone, "Coffee reminders: test message. It works!")
+            text = f"Test SMS sent to {phone} {ref}"
+        except SmsError as exc:
+            text = f"Test SMS to {phone} failed: {exc}"
+        store.log(text)
+        return text, None
+    if action == "modem_status":
+        sender = store.sender()
+        if not hasattr(sender, "status"):
+            raise cfgmod.ConfigError("modem status is only available with sms_provider: modem")
+        try:
+            return "", {"modem": sender.status()}
+        except SmsError as exc:
+            return f"Modem problem: {exc}", None
     if action == "remind":
         name = form_data.get("name")
         return remind_and_log(store, [name] if name else None), None
@@ -219,8 +249,11 @@ class Handler(BaseHTTPRequestHandler):
         fields = {k: v[0] for k, v in urllib.parse.parse_qs(self.rfile.read(length).decode()).items()}
         try:
             msg, preview = handle_action(self.store, action, fields)
-        except cfgmod.ConfigError as exc:
+        except (cfgmod.ConfigError, SmsError) as exc:
             msg, preview = f"Error: {exc}", None
+        if isinstance(preview, dict):
+            self._send_html(render_page(self.store, msg, modem_status=preview["modem"]))
+            return
         if preview is not None:
             self._send_html(render_page(self.store, msg, preview))
             return

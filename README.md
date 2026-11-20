@@ -27,7 +27,7 @@ Settings → Add-ons → Add-on Store → ⋮ → Repositories → add
    which can take a few minutes.
 
 Then on the add-on's **Configuration** tab choose how to send SMS
-(Twilio, or an SMS notify service you already have in Home Assistant), your payment
+(a USB modem with a SIM card, Twilio, or an SMS notify service you already have in Home Assistant), your payment
 details and the reminder days/time. Start it and open **Coffee** in the sidebar.
 Full details: [coffee-reminders/DOCS.md](coffee-reminders/DOCS.md).
 
